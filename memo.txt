@@ -1,0 +1,17 @@
+* Hero animations
+https://qiita.com/ryota47/items/82ef188e9d3dd4840893
+https://flutter.dev/docs/development/ui/animations/hero-animations
+
+* carousel_slider
+https://qiita.com/ryota47/items/fb8e32f1a409026ba065
+https://pub.dev/packages/carousel_slider
+
+以上を組み込む。
+AndroidでView表示用に使っていた、Adapterのようなものを取り入れたい。
+
+
+Android開発者のためのFlutter説明文がためになったので全訳&要約
+https://qiita.com/coka__01/items/db6d482af1a1994aaa73
+
+Flutter for Android developers
+https://flutter.dev/docs/get-started/flutter-for/android-devs
