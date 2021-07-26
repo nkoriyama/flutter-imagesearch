@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-
 import 'flickr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +19,7 @@ String getEncodedQuery(String query) {
 }
 
 String getPhotoListUrl(String query, int perPage, int page) {
-  var ret =  "https://api.flickr.com/services/rest/" +
+  var ret = "https://api.flickr.com/services/rest/" +
       "?method=flickr.photos.search" +
       "&api_key=" +
       getFlickrApiKey() +
@@ -37,9 +36,11 @@ String getPhotoListUrl(String query, int perPage, int page) {
   //print(ret);
   return ret;
 }
+
 String getQuery() {
   return "ラーメン";
 }
+
 final int _perpage = 100;
 
 Future<List<Photo>> fetchPhotos(http.Client client) async {
@@ -57,7 +58,6 @@ List<Photo> parsePhotos(String responseBody) {
   return flickrresp.getPhotoInfoList();
 }
 
-
 Future<List<Photo>> fetchPhotoList(String query) async {
   final response = await http.post(
       Uri.parse(getPhotoListUrl(getQuery(), _perpage, 1)),
@@ -68,8 +68,7 @@ Future<List<Photo>> fetchPhotoList(String query) async {
     final FlickrPhotoResponse flickrresp =
         FlickrPhotoResponse.fromJson(jsonDecode(response.body));
     //print('stat:'+flickrresp.stat!);
-    if(flickrresp.stat == 'ok')
-      return flickrresp.getPhotoInfoList();
+    if (flickrresp.stat == 'ok') return flickrresp.getPhotoInfoList();
   }
 
   throw Exception('Failed to create FlickrPhotoResponse');
@@ -122,6 +121,80 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
+class _SecondPage extends StatelessWidget {
+  final Photo photo;
+
+  const _SecondPage(this.photo);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Material(
+          child: InkWell(
+            onTap: () => Navigator.of(context).pop(),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Image.network(photo.getImageUrl(), fit: BoxFit.cover),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Tween<RelativeRect> _createTween(BuildContext context) {
+  var windowSize = MediaQuery.of(context).size;
+  var box = context.findRenderObject() as RenderBox;
+  var rect = box.localToGlobal(Offset.zero) & box.size;
+  var relativeRect = RelativeRect.fromSize(rect, windowSize);
+
+  return RelativeRectTween(
+    begin: relativeRect,
+    end: RelativeRect.fill,
+  );
+}
+
+Route _createRoute(BuildContext parentContext, Photo photo) {
+  return PageRouteBuilder<void>(
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return _SecondPage(photo);
+    },
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      var rectAnimation = _createTween(parentContext)
+          .chain(CurveTween(curve: Curves.ease))
+          .animate(animation);
+
+      return Stack(
+        children: [
+          PositionedTransition(rect: rectAnimation, child: child),
+        ],
+      );
+    },
+  );
+}
+
+class SmallCard extends StatelessWidget {
+  const SmallCard({required this.photo, Key? key}) : super(key: key);
+  final Photo photo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Material(
+        child: InkWell(
+            onTap: () {
+              var nav = Navigator.of(context);
+              nav.push<void>(_createRoute(context, photo));
+            },
+            child: Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover)),
+      ),
+    );
+  }
+}
+
 class PhotosList extends StatelessWidget {
   const PhotosList({Key? key, required this.photos}) : super(key: key);
 
@@ -131,11 +204,12 @@ class PhotosList extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: 4,
       ),
       itemCount: photos.length,
       itemBuilder: (context, index) {
-        return Image.network(photos[index].getThumbnailUrl());
+        //return Image.network(photos[index].getThumbnailUrl());
+        return SmallCard(photo: photos[index]);
       },
     );
   }
