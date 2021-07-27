@@ -134,13 +134,31 @@ class _SecondPage extends StatelessWidget {
         child: Material(
           child: InkWell(
             onTap: () => Navigator.of(context).pop(),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Image.network(photo.getImageUrl(), fit: BoxFit.cover),
-            ),
+            child: Stack(
+                children: <Widget>[
+                  AspectRatio(
+                      aspectRatio: 1,
+                      child: Image.network(photo.getImageUrl(), fit: BoxFit.cover),
+                      ),
+                  Align(
+                      alignment: Alignment.bottomLeft,
+                      //alignment: Alignment.topLeft,
+                      child: Text(
+                          photo.getTitle(),
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color:Colors.black,
+                              backgroundColor:Colors.black.withOpacity(0.5),
+                              ),
+                          ),
+                  ),
+                ],
+             ),
           ),
         ),
       ),
+        
     );
   }
 }
