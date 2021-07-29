@@ -13,18 +13,17 @@ class Photo extends PhotoInfo {
   final int? isfriend;
   final int? isfamily;
 
-  Photo(
-      {
-      this.id,
-      this.owner,
-      this.secret,
-      this.server,
-        this.farm,
-      this.title,
-      this.ispublic,
-      this.isfriend,
-      this.isfamily,
-      });
+  Photo({
+    this.id,
+    this.owner,
+    this.secret,
+    this.server,
+    this.farm,
+    this.title,
+    this.ispublic,
+    this.isfriend,
+    this.isfamily,
+  });
 
   factory Photo.fromJson(Map<String, dynamic> json) {
     //jprint('Photo:fromJson');
@@ -140,42 +139,9 @@ List<Photo> toPhotoList(Map<String, dynamic> json) {
 }
 
 void parsePhotoList(Map<String, dynamic> json) {
-  if (json['photo'] is List) {
-    //print("json['photo'] is List");
-    //print(json['photo'].length);
-
-    for (var item in json['photo']) {
-      try {
-        var photo = Photo.fromJson(item);
-        //print(photo.title);
-        //print(photo.getThumbnailUrl());
-        //print(photo.getImageUrl());
-        //print(photo.getPhotoPageUrl());
-      } catch (e,s) {
-        print(e);
-        print(s);
-      }
-    }
-  } else {
-    //print("json['photo'] is not List");
-
-  }
 }
 
 void parsePhotoList2(Map<String, dynamic> json) {
-  //print('list0');
-  final String str = json['photo'].toString();
-  //print('list1');
-  final parsed = jsonDecode(str).cast<Map<String, dynamic>>();
-  //print('list2');
-
-  var list = parsed.map<Photo>((x) => Photo.fromJson(x)).toList();
-  for (Photo photo in list) {
-    //print(photo.title);
-    //print(photo.getThumbnailUrl());
-    //print(photo.getImageUrl());
-    //print(photo.getPhotoPageUrl());
-  }
 }
 
 class Photos {
@@ -185,26 +151,21 @@ class Photos {
   final List<Photo>? photo;
   final int? total;
 
-  Photos(
-      {this.page,
-      this.pages,
-      this.perpage,
-      this.photo,
-      this.total});
+  Photos({this.page, this.pages, this.perpage, this.photo, this.total});
 
   factory Photos.fromJson(Map<String, dynamic> json) {
     try {
-    //print('Photos:fromJson');
-    var ret = Photos(
-      page: json['page'] as int,
-      pages: json['pages'] as int,
-      perpage: json['perpage'] as int,
-      photo: toPhotoList(json),
-      total: json['total'] as int,
-    );
-    //print('after Photos:fromJson');
-    return ret; 
-    } catch (e,s) {
+      //print('Photos:fromJson');
+      var ret = Photos(
+        page: json['page'] as int,
+        pages: json['pages'] as int,
+        perpage: json['perpage'] as int,
+        photo: toPhotoList(json),
+        total: json['total'] as int,
+      );
+      //print('after Photos:fromJson');
+      return ret;
+    } catch (e, s) {
       //print('exception');
       print(e);
       print(s);
@@ -212,13 +173,12 @@ class Photos {
 
       throw Exception(e);
     }
-    }
+  }
 }
 
 class FlickrPhotoResponse {
   final Photos? photos;
   final String? stat;
-
 
   FlickrPhotoResponse({this.photos, this.stat});
   factory FlickrPhotoResponse.fromJson(Map<String, dynamic> json) {

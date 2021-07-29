@@ -41,18 +41,21 @@ String getQuery() {
   return "ラーメン";
 }
 
-final int _perpage = 100;
+const int _perpage = 100;
+int _page = 0;
+List<Photo> _photolist = List<Photo>.empty( growable:true);
 
-Future<List<Photo>> fetchPhotos(http.Client client) async {
+Future<List<Photo>> fetchPhotolist(http.Client client) async {
   final response = await client.post(
-      Uri.parse(getPhotoListUrl(getQuery(), _perpage, 1)),
+
+      Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       });
-  return compute(parsePhotos, response.body);
+  return compute(parsePhotolist, response.body);
 }
 
-List<Photo> parsePhotos(String responseBody) {
+List<Photo> parsePhotolist(String responseBody) {
   final FlickrPhotoResponse flickrresp =
       FlickrPhotoResponse.fromJson(jsonDecode(responseBody));
   return flickrresp.getPhotoInfoList();
@@ -60,7 +63,7 @@ List<Photo> parsePhotos(String responseBody) {
 
 Future<List<Photo>> fetchPhotoList(String query) async {
   final response = await http.post(
-      Uri.parse(getPhotoListUrl(getQuery(), _perpage, 1)),
+      Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       });
@@ -102,14 +105,15 @@ class MyHomePage extends StatelessWidget {
         title: Text(title),
       ),
       body: FutureBuilder<List<Photo>>(
-        future: fetchPhotos(http.Client()),
+        future: fetchPhotolist(http.Client()),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(
               child: Text('エラー発生！'),
             );
           } else if (snapshot.hasData) {
-            return PhotosList(photos: snapshot.data!);
+            _photolist.addAll(snapshot.data!);
+            return PhotoListView(photolist: _photolist);
           } else {
             return const Center(
               child: CircularProgressIndicator(),
@@ -213,10 +217,10 @@ class SmallCard extends StatelessWidget {
   }
 }
 
-class PhotosList extends StatelessWidget {
-  const PhotosList({Key? key, required this.photos}) : super(key: key);
+class PhotoListView extends StatelessWidget {
+  const PhotoListView({Key? key, required this.photolist}) : super(key: key);
 
-  final List<Photo> photos;
+  final List<Photo> photolist;
 
   @override
   Widget build(BuildContext context) {
@@ -224,10 +228,10 @@ class PhotosList extends StatelessWidget {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
       ),
-      itemCount: photos.length,
+      itemCount: photolist.length,
       itemBuilder: (context, index) {
         //return Image.network(photos[index].getThumbnailUrl());
-        return SmallCard(photo: photos[index]);
+        return SmallCard(photo: photolist[index]);
       },
     );
   }
