@@ -43,11 +43,10 @@ String getQuery() {
 
 const int _perpage = 100;
 int _page = 0;
-List<Photo> _photolist = List<Photo>.empty( growable:true);
+List<Photo> _photolist = List<Photo>.empty(growable: true);
 
 Future<List<Photo>> fetchPhotolist(http.Client client) async {
   final response = await client.post(
-
       Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
@@ -61,6 +60,7 @@ List<Photo> parsePhotolist(String responseBody) {
   return flickrresp.getPhotoInfoList();
 }
 
+/*
 Future<List<Photo>> fetchPhotoList(String query) async {
   final response = await http.post(
       Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
@@ -76,6 +76,7 @@ Future<List<Photo>> fetchPhotoList(String query) async {
 
   throw Exception('Failed to create FlickrPhotoResponse');
 }
+*/
 
 void main() => runApp(const MyApp());
 
@@ -107,17 +108,26 @@ class MyHomePage extends StatelessWidget {
       body: FutureBuilder<List<Photo>>(
         future: fetchPhotolist(http.Client()),
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text('エラー発生！'),
-            );
-          } else if (snapshot.hasData) {
-            _photolist.addAll(snapshot.data!);
-            return PhotoListView(photolist: _photolist);
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          switch (snapshot.connectionState) {
+            case ConnectionState.none:
+            case ConnectionState.waiting:
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            case ConnectionState.done:
+            default:
+              if (snapshot.hasError) {
+                return const Center(
+                  child: Text('エラー発生！'),
+                );
+              } else if (snapshot.hasData) {
+                _photolist.addAll(snapshot.data!);
+                return PhotoListView();
+              } else {
+                return const Center(
+                  child: Text('No data！'),
+                );
+              }
           }
         },
       ),
@@ -139,30 +149,29 @@ class _SecondPage extends StatelessWidget {
           child: InkWell(
             onTap: () => Navigator.of(context).pop(),
             child: Stack(
-                children: <Widget>[
-                  AspectRatio(
-                      aspectRatio: 1,
-                      child: Image.network(photo.getImageUrl(), fit: BoxFit.cover),
-                      ),
-                  Align(
-                      alignment: Alignment.bottomLeft,
-                      //alignment: Alignment.topLeft,
-                      child: Text(
-                          photo.getTitle(),
-                          style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color:Colors.black,
-                              backgroundColor:Colors.black.withOpacity(0.5),
-                              ),
-                          ),
+              children: <Widget>[
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(photo.getImageUrl(), fit: BoxFit.cover),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  //alignment: Alignment.topLeft,
+                  child: Text(
+                    photo.getTitle(),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      backgroundColor: Colors.black.withOpacity(0.5),
+                    ),
                   ),
-                ],
-             ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-        
     );
   }
 }
@@ -218,9 +227,7 @@ class SmallCard extends StatelessWidget {
 }
 
 class PhotoListView extends StatelessWidget {
-  const PhotoListView({Key? key, required this.photolist}) : super(key: key);
-
-  final List<Photo> photolist;
+  const PhotoListView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -228,10 +235,10 @@ class PhotoListView extends StatelessWidget {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
       ),
-      itemCount: photolist.length,
+      itemCount: _photolist.length,
       itemBuilder: (context, index) {
         //return Image.network(photos[index].getThumbnailUrl());
-        return SmallCard(photo: photolist[index]);
+        return SmallCard(photo: _photolist[index]);
       },
     );
   }
