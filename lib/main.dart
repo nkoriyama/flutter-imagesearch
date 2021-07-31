@@ -46,6 +46,10 @@ String getQuery() {
 const int _perpage = 100;
 int _page = 0;
 
+Future<List<Photo>> preparePhotolist(http.Client client) async {
+    var list = await fetchPhotolist(client);
+    return list;
+}
 Future<List<Photo>> fetchPhotolist(http.Client client) async {
   final response = await client.post(
       Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
@@ -61,25 +65,6 @@ List<Photo> parsePhotolist(String responseBody) {
   return flickrresp.getPhotoInfoList();
 }
 
-/*
-Future<List<Photo>> fetchPhotoList(String query) async {
-  final response = await http.post(
-      Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      });
-  if (response.statusCode == 200) {
-    final FlickrPhotoResponse flickrresp =
-        FlickrPhotoResponse.fromJson(jsonDecode(response.body));
-    //print('stat:'+flickrresp.stat!);
-    if (flickrresp.stat == 'ok') return flickrresp.getPhotoInfoList();
-  }
-
-  throw Exception('Failed to create FlickrPhotoResponse');
-}
-*/
-
-//void main() => runApp(ProviderScope(child:ImageSearch()));
 void main() => runApp(const ImageSearch());
 
 class ImageSearch extends StatelessWidget {
@@ -107,18 +92,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Photo> photolist = List<Photo>.empty(growable: true);
 
+  Future<void> _onRefresh() async {
+    setState(() {
+    });
+  }
+  /*
   Future<void> _fetchList() async {
     var list = await fetchPhotolist(http.Client());
 
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       photolist.addAll(list);
     });
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -144,25 +130,27 @@ class _MyHomePageState extends State<MyHomePage> {
               } else if (snapshot.hasData) {
                 photolist.addAll(snapshot.data!);
                 //return PhotoListView(photolist: photolist);
-                return  RefreshIndicator(
+                return RefreshIndicator(
                     onRefresh: () async {
-                      debugPrint("Load start:"+photolist.length.toString());
-                      await _fetchList();
-                      debugPrint("Load finish:"+photolist.length.toString());
+                      await _onRefresh();
                     },
-                    child:GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                  ),
-                  itemCount: photolist.length,
-                  itemBuilder: (context, index) {
-                    //return Image.network(photos[index].getThumbnailUrl());
-                    return SmallCard(photo: photolist[index]);
+                    /*
+                  onRefresh: () async {
+                    debugPrint("Load start:" + photolist.length.toString());
+                    await _fetchList();
+                    debugPrint("Load finish:" + photolist.length.toString());
                   },
-                  
-                ),
-
-
+                  */
+                  child: GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                    ),
+                    itemCount: photolist.length,
+                    itemBuilder: (context, index) {
+                      return SmallCard(photo: photolist[index], index: index);
+                    },
+                  ),
                 );
               } else {
                 return const Center(
@@ -249,19 +237,26 @@ Route _createRoute(BuildContext parentContext, Photo photo) {
 }
 
 class SmallCard extends StatelessWidget {
-  const SmallCard({required this.photo, Key? key}) : super(key: key);
+  const SmallCard({required this.photo, required this.index, Key? key})
+      : super(key: key);
   final Photo photo;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Material(
         child: InkWell(
-            onTap: () {
-              var nav = Navigator.of(context);
-              nav.push<void>(_createRoute(context, photo));
-            },
-            child: Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover)),
+          onTap: () {
+            var nav = Navigator.of(context);
+            nav.push<void>(_createRoute(context, photo));
+          },
+          //child: Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover)),
+          child: Stack(children: <Widget>[
+            Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover),
+            Text(index.toString()),
+          ]),
+        ),
       ),
     );
   }
@@ -281,7 +276,7 @@ class PhotoListView extends StatelessWidget {
       itemCount: photolist.length,
       itemBuilder: (context, index) {
         //return Image.network(photos[index].getThumbnailUrl());
-        return SmallCard(photo: photolist[index]);
+        return SmallCard(photo: photolist[index], index: index);
       },
     );
   }
