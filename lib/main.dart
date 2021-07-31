@@ -5,6 +5,8 @@ import 'flickr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+//import 'package:flutter_riverpod/flutter_riverpod.dart';
+//import 'package:riverpod/riverpod.dart';
 
 String getFlickrApiKey() {
   var ret = "";
@@ -43,7 +45,6 @@ String getQuery() {
 
 const int _perpage = 100;
 int _page = 0;
-List<Photo> _photolist = List<Photo>.empty(growable: true);
 
 Future<List<Photo>> fetchPhotolist(http.Client client) async {
   final response = await client.post(
@@ -78,11 +79,11 @@ Future<List<Photo>> fetchPhotoList(String query) async {
 }
 */
 
-void main() => runApp(const MyApp());
+//void main() => runApp(ProviderScope(child:ImageSearch()));
+void main() => runApp(const ImageSearch());
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
+class ImageSearch extends StatelessWidget {
+  const ImageSearch({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     const appTitle = 'ImageSearch';
@@ -94,16 +95,36 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
   @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  List<Photo> photolist = List<Photo>.empty(growable: true);
+
+  void _fetchList() async {
+    var list = await fetchPhotolist(http.Client());
+
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      photolist.addAll(list);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
       ),
       body: FutureBuilder<List<Photo>>(
         future: fetchPhotolist(http.Client()),
@@ -121,8 +142,18 @@ class MyHomePage extends StatelessWidget {
                   child: Text('エラー発生！'),
                 );
               } else if (snapshot.hasData) {
-                _photolist.addAll(snapshot.data!);
-                return PhotoListView();
+                photolist.addAll(snapshot.data!);
+                //return PhotoListView(photolist: photolist);
+                return GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                  ),
+                  itemCount: photolist.length,
+                  itemBuilder: (context, index) {
+                    //return Image.network(photos[index].getThumbnailUrl());
+                    return SmallCard(photo: photolist[index]);
+                  },
+                );
               } else {
                 return const Center(
                   child: Text('No data！'),
@@ -227,7 +258,9 @@ class SmallCard extends StatelessWidget {
 }
 
 class PhotoListView extends StatelessWidget {
-  const PhotoListView({Key? key}) : super(key: key);
+  // const PhotoListView({Key? key}) : super(key: key);
+  const PhotoListView({Key? key, required this.photolist}) : super(key: key);
+  final List<Photo> photolist;
 
   @override
   Widget build(BuildContext context) {
@@ -235,10 +268,10 @@ class PhotoListView extends StatelessWidget {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
       ),
-      itemCount: _photolist.length,
+      itemCount: photolist.length,
       itemBuilder: (context, index) {
         //return Image.network(photos[index].getThumbnailUrl());
-        return SmallCard(photo: _photolist[index]);
+        return SmallCard(photo: photolist[index]);
       },
     );
   }
