@@ -107,7 +107,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Photo> photolist = List<Photo>.empty(growable: true);
 
-  void _fetchList() async {
+  Future<void> _fetchList() async {
     var list = await fetchPhotolist(http.Client());
 
     setState(() {
@@ -144,7 +144,13 @@ class _MyHomePageState extends State<MyHomePage> {
               } else if (snapshot.hasData) {
                 photolist.addAll(snapshot.data!);
                 //return PhotoListView(photolist: photolist);
-                return GridView.builder(
+                return  RefreshIndicator(
+                    onRefresh: () async {
+                      debugPrint("Load start:"+photolist.length.toString());
+                      await _fetchList();
+                      debugPrint("Load finish:"+photolist.length.toString());
+                    },
+                    child:GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
                   ),
@@ -153,6 +159,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     //return Image.network(photos[index].getThumbnailUrl());
                     return SmallCard(photo: photolist[index]);
                   },
+                  
+                ),
+
+
                 );
               } else {
                 return const Center(
