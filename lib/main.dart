@@ -39,20 +39,12 @@ String getPhotoListUrl(String query, int perPage, int page) {
   return ret;
 }
 
-String getQuery() {
-  return "ラーメン";
-}
-
 const int _perpage = 100;
 int _page = 0;
 
-Future<List<Photo>> preparePhotolist(http.Client client) async {
-    var list = await fetchPhotolist(client);
-    return list;
-}
-Future<List<Photo>> fetchPhotolist(http.Client client) async {
+Future<List<Photo>> fetchPhotolist(http.Client client, String query) async {
   final response = await client.post(
-      Uri.parse(getPhotoListUrl(getQuery(), _perpage, _page++)),
+      Uri.parse(getPhotoListUrl(query, _perpage, _page++)),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       });
@@ -75,15 +67,17 @@ class ImageSearch extends StatelessWidget {
 
     return const MaterialApp(
       title: appTitle,
-      home: MyHomePage(title: appTitle),
+      home: MyHomePage(title: appTitle, query: "ラーメン"),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({Key? key, required this.title, required this.query})
+      : super(key: key);
 
   final String title;
+  final String query;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -93,18 +87,18 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Photo> photolist = List<Photo>.empty(growable: true);
 
   Future<void> _onRefresh() async {
-    setState(() {
-    });
+    setState(() {});
   }
-  /*
-  Future<void> _fetchList() async {
-    var list = await fetchPhotolist(http.Client());
 
+  void _reload() {
     setState(() {
-      photolist.addAll(list);
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
     });
   }
-  */
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: FutureBuilder<List<Photo>>(
-        future: fetchPhotolist(http.Client()),
+        future: fetchPhotolist(http.Client(), widget.query),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -129,18 +123,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               } else if (snapshot.hasData) {
                 photolist.addAll(snapshot.data!);
-                //return PhotoListView(photolist: photolist);
                 return RefreshIndicator(
-                    onRefresh: () async {
-                      await _onRefresh();
-                    },
-                    /*
                   onRefresh: () async {
-                    debugPrint("Load start:" + photolist.length.toString());
-                    await _fetchList();
-                    debugPrint("Load finish:" + photolist.length.toString());
+                    await _onRefresh();
                   },
-                  */
                   child: GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -159,6 +145,11 @@ class _MyHomePageState extends State<MyHomePage> {
               }
           }
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _reload,
+        tooltip: 'load more',
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -251,33 +242,12 @@ class SmallCard extends StatelessWidget {
             var nav = Navigator.of(context);
             nav.push<void>(_createRoute(context, photo));
           },
-          //child: Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover)),
           child: Stack(children: <Widget>[
             Image.network(photo.getThumbnailUrl(), fit: BoxFit.cover),
             Text(index.toString()),
           ]),
         ),
       ),
-    );
-  }
-}
-
-class PhotoListView extends StatelessWidget {
-  // const PhotoListView({Key? key}) : super(key: key);
-  const PhotoListView({Key? key, required this.photolist}) : super(key: key);
-  final List<Photo> photolist;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-      ),
-      itemCount: photolist.length,
-      itemBuilder: (context, index) {
-        //return Image.network(photos[index].getThumbnailUrl());
-        return SmallCard(photo: photolist[index], index: index);
-      },
     );
   }
 }
