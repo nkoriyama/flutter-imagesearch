@@ -39,18 +39,6 @@ String getPhotoListUrl(String query, int perPage, int page) {
   return ret;
 }
 
-const int _perpage = 100;
-int _page = 0;
-
-Future<List<Photo>> fetchPhotolist(http.Client client, String query) async {
-  final response = await client.post(
-      Uri.parse(getPhotoListUrl(query, _perpage, _page++)),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      });
-  return compute(parsePhotolist, response.body);
-}
-
 List<Photo> parsePhotolist(String responseBody) {
   final FlickrPhotoResponse flickrresp =
       FlickrPhotoResponse.fromJson(jsonDecode(responseBody));
@@ -85,11 +73,31 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<Photo> photolist = List<Photo>.empty(growable: true);
+  late String _query;
+  late String _editing;
+  late int _page;
+  final int _perpage = 100;
+  late TextEditingController _textEditingController;
+  @override
+  void initState() {
+    super.initState();
+    _query = widget.query;
+    _editing ="";
+    _page = 0;
+    _textEditingController = new TextEditingController(text: _query);
+  }
 
   Future<void> _onRefresh() async {
     setState(() {});
   }
 
+  void _search(String query) {
+    _query= query;
+    _page = 0;
+    photolist.clear();
+    _reload();
+
+  }
   void _reload() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -100,14 +108,39 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<List<Photo>> fetchPhotolist(http.Client client, String query) async {
+    final response = await client.post(
+        Uri.parse(getPhotoListUrl(query, _perpage, _page++)),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        });
+    return compute(parsePhotolist, response.body);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(
+              onPressed: () {
+                _search(_editing);
+              },
+            icon: Icon(Icons.search),
+          ),
+        ],
+        title: TextField(
+          controller: _textEditingController,
+          onChanged: (value) {
+            _editing = value;
+          },
+          onSubmitted:(value) {
+            _search(value);
+          },
+      ),
       ),
       body: FutureBuilder<List<Photo>>(
-        future: fetchPhotolist(http.Client(), widget.query),
+        future: fetchPhotolist(http.Client(), _query),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
