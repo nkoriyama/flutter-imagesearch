@@ -82,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _query = widget.query;
-    _editing ="";
+    _editing = "";
     _page = 0;
     _textEditingController = new TextEditingController(text: _query);
   }
@@ -92,12 +92,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _search(String query) {
-    _query= query;
+    _query = query;
     _page = 0;
     photolist.clear();
     _reload();
-
   }
+
   void _reload() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -123,21 +123,29 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         actions: <Widget>[
           IconButton(
-              onPressed: () {
-                _search(_editing);
-              },
+            onPressed: () {
+              _search(_editing);
+            },
             icon: Icon(Icons.search),
           ),
         ],
-        title: TextField(
-          controller: _textEditingController,
-          onChanged: (value) {
-            _editing = value;
+        title: GestureDetector(
+          onTap: () {
+            final FocusScopeNode currentScope = FocusScope.of(context);
+            if (!currentScope.hasPrimaryFocus && currentScope.hasFocus) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
           },
-          onSubmitted:(value) {
-            _search(value);
-          },
-      ),
+          child: TextField(
+            controller: _textEditingController,
+            onChanged: (value) {
+              _editing = value;
+            },
+            onSubmitted: (value) {
+              _search(value);
+            },
+          ),
+        ),
       ),
       body: FutureBuilder<List<Photo>>(
         future: fetchPhotolist(http.Client(), _query),
